@@ -107,8 +107,9 @@ c     # ----------------------------------------------
       double precision th, phi
       integer i,j,k
 
-c      double precision rrot_com(3,3)
-c      common /comrot/ rrot_com
+c     # Rot_angle : [phi, theta]
+c     double precision rrot_com(3,3)
+c     common /comrot/ rrot_com
 
 c     # Rotates map so as to not bias the solution.
       do i = 1,3

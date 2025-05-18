@@ -77,7 +77,7 @@ add_library(forestclaw_f OBJECT
   mappings/pillowdisk/mapc2m_pillowdisk.f
   mappings/squareddisk/mapc2m_squareddisk.f
   mappings/pillowdisk5/mapc2m_pillowdisk5.f
-  mappings/cubedsphere/mapc2m_cubedsphere.f
+  mappings/cubedsphere/mapc2m_cubedsphere.f90
   mappings/pillowsphere/mapc2m_pillowsphere.f
   mappings/fivepatch/mapc2m_fivepatch.f
   mappings/torus/mapc2m_torus.f
