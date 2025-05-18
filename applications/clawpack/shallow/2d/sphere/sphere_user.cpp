@@ -91,6 +91,9 @@ void sphere_problem_setup(fclaw_global_t* glob)
         fprintf(f,  "%-24.16f   %s",fclaw_opt->refine_threshold,"\% refine_threshold\n");
         fprintf(f,  "%-24.16f   %s",fclaw_opt->coarsen_threshold,"\% coarsen_threshold\n");
 
+        fprintf(f,  "%-24.16f   %s",fclaw_opt->phi,"\% phi\n");
+        fprintf(f,  "%-24.16f   %s",fclaw_opt->theta,"\% theta\n");
+
         fclose(f);
     }
     fclaw_domain_barrier (glob->domain);
@@ -128,6 +131,9 @@ void sphere_patch_setup_manifold(fclaw_global_t *glob,
                                    &edgelengths,&curvature);
 
 
+    // This is experimental ...
+    int* block_corner_count = fclaw_patch_block_corner_count(glob,patch);
+
     const user_options_t* user_opt = sphere_get_options(glob);
     if (user_opt->claw_version == 4)
     {
@@ -136,7 +142,7 @@ void sphere_patch_setup_manifold(fclaw_global_t *glob,
                       &dx,&dy,area,xnormals,ynormals,
                       xtangents,ytangents,surfnormals, curvature,
                       edgelengths,
-                      aux, &maux);
+                      aux, &maux,block_corner_count);
         CLAWPACK46_UNSET_BLOCK();
     }
     else

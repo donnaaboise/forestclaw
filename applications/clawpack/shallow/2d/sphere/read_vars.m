@@ -34,4 +34,6 @@ parms.speed = data(22);
 parms.bathy = data(23:24);
 parms.refine_threshold = data(25);
 parms.coarsen_threshold = data(26);
+parms.phi = data(27);
+parms.theta = data(28);
 end

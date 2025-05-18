@@ -103,7 +103,8 @@ void SPHERE_SETAUX(const int* mx, const int* my,const int* mbc,
                    double xtangents[], double ytangents[],
                    double surnormals[],double edgelengths[],
                    double curvature[],
-                   double aux[],int* maux);
+                   double aux[],int* maux,
+                   int block_corner_count[]);
 
 
 #define SPHERE5_SETAUX FCLAW_F77_FUNC(sphere5_setaux,SPHERE5_SETAUX)

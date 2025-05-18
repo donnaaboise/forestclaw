@@ -135,6 +135,7 @@ sphere_postprocess (user_options_t *user)
     for(int i = 0; i < 3; i++)
         d += user->center[i]*user->center[i];
     d = sqrt(d);
+    printf("d = %f\n",d);
     double tol = 1e-15;
     if (d > 1+tol) 
     {
@@ -144,7 +145,7 @@ sphere_postprocess (user_options_t *user)
         fclaw_global_essentialf("\n");
         return FCLAW_EXIT_ERROR;
     }
-    else if (1 < d && d < 1 + tol)
+    else if (fabs(d-1) > tol)
     {
         fclaw_global_essentialf("\n");
         fclaw_global_essentialf("Normalizing omega\n");
