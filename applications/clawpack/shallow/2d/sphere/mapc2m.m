@@ -27,4 +27,16 @@ switch map
 
 end
 
+% R = rotate_map(parms.theta,parms.phi);
+% [m,n] = size(xp);
+% 
+% XYZ = R*[xp(:)'; yp(:)'; zp(:)'];
+% 
+% 
+% 
+% xp = reshape(XYZ(1,:),m,n);
+% yp = reshape(XYZ(2,:),m,n);
+% zp = reshape(XYZ(3,:),m,n);
+
+
 end

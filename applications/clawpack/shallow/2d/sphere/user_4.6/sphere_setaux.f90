@@ -1,11 +1,11 @@
 subroutine sphere_setaux(mx,my,mbc,xlower,ylower, & 
    dx,dy,area,xnormals,ynormals, & 
    xtangents,ytangents,surfnormals,curvature, & 
-   edgelengths,aux,maux)
+   edgelengths,aux,maux,mbathy)
       
    implicit none
 
-   integer mbc, mx,my, maux
+   integer mbc, mx,my, maux,mbathy
    double precision xlower, ylower, dx,dy
    double precision aux(1-mbc:mx+mbc,1-mbc:my+mbc,maux)
 
@@ -21,8 +21,11 @@ subroutine sphere_setaux(mx,my,mbc,xlower,ylower, &
    double precision   curvature(-mbc:mx+mbc+2,-mbc:my+mbc+1)
    double precision surfnormals(-mbc:mx+mbc+1,-mbc:my+mbc+1,3)
 
-    integer example
-    common /swe_example/ example
+   double precision bf1, bf2, bf3, bf4
+   integer level
+
+   integer example
+   common /swe_example/ example
 
    integer i,j,m
    double precision dxdy, xc, yc
@@ -34,6 +37,14 @@ subroutine sphere_setaux(mx,my,mbc,xlower,ylower, &
    cont = fclaw_map_get_context()
 
    blockno = fc2d_clawpack46_get_block()
+
+   if (abs(dx - 1.0/(2*mx)) .lt.  1e-12) then
+      level = 1
+   else
+      level = 2
+   endif
+
+   write(6,*) level
 
    dxdy = dx*dy
    do i = 1-mbc,mx+mbc
@@ -59,10 +70,29 @@ subroutine sphere_setaux(mx,my,mbc,xlower,ylower, &
          enddo
          aux(i,j,17) = curvature(i,j)
 
-         !! Set bathymetry
-         !! Ridge bathymetry
-         aux(i,j,18) = bmount(blockno, xc,yc)  
       enddo
    enddo
 
+   !! Set bathymetry
+   !! Ridge bathymetry
+   do i = 1-mbc,mx+mbc
+      do j = 1-mbc,my+mbc
+         xc = xlower + (i-0.5)*dx
+         yc = ylower + (j-0.5)*dy
+
+         if (level .eq. 1) then
+
+            bf1 = bmount(blockno,xc-dx/2,yc-dy/2)
+            bf2 = bmount(blockno,xc-dx/2,yc+dy/2)
+            bf3 = bmount(blockno,xc+dx/2,yc-dy/2)
+            bf4 = bmount(blockno,xc+dx/2,yc+dy/2)
+
+            aux(i,j,mbathy) = (bf1 + bf2 + bf3 + bf4)/4
+         else
+            aux(i,j,mbathy) = bmount(blockno,xc,yc)
+         endif
+      end do
+   end do
 end
+
+

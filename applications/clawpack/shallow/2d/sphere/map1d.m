@@ -48,9 +48,11 @@
 
 function [r,q] = map1d(xgrid,ygrid,qgrid)
 
+parms = read_vars();
+
+
 [xp,yp,zp] = mapc2m(xgrid,ygrid);
 
-parms = read_vars();
 center = parms.center;
 
 rp = sqrt(xp.^2 + yp.^2 + zp.^2);

@@ -48,6 +48,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Fix syntax highlighting
 #endif
 
+/* This value needs to be   consistent with what is in setaux */
+static int s_mbathy = 18;
 
 static
 void sphere_problem_setup(fclaw_global_t* glob)
@@ -132,7 +134,7 @@ void sphere_patch_setup_manifold(fclaw_global_t *glob,
 
 
     // This is experimental ...
-    int* block_corner_count = fclaw_patch_block_corner_count(glob,patch);
+    //int* block_corner_count = fclaw_patch_block_corner_count(glob,patch);
 
     const user_options_t* user_opt = sphere_get_options(glob);
     if (user_opt->claw_version == 4)
@@ -142,7 +144,7 @@ void sphere_patch_setup_manifold(fclaw_global_t *glob,
                       &dx,&dy,area,xnormals,ynormals,
                       xtangents,ytangents,surfnormals, curvature,
                       edgelengths,
-                      aux, &maux,block_corner_count);
+                      aux, &maux,&s_mbathy);
         CLAWPACK46_UNSET_BLOCK();
     }
     else
@@ -211,6 +213,236 @@ void sphere_header_ascii(fclaw_global_t* glob,int iframe)
 
     SPHERE_FORT_WRITE_HEADER(&iframe,&time,&meqn,&maux,&ngrids);
 }
+/* ---------------------------------- AVERAGE ---------------------------------- */
+static
+void sphere_average_face(fclaw_global_t *glob,
+                            fclaw_patch_t *coarse_patch,
+                            fclaw_patch_t *fine_patch,
+                            int idir,
+                            int iface_coarse,
+                            int p4est_refineFactor,
+                            int refratio,
+                            int time_interp,
+                            int igrid,
+                            fclaw_patch_transform_data_t* transform_data)
+{
+    int meqn;
+    double *qcoarse;
+    fclaw_clawpatch_timesync_data(glob,coarse_patch,time_interp,&qcoarse,&meqn);
+    double *qfine = fclaw_clawpatch_get_q(glob,fine_patch);
+
+
+    const fclaw_clawpatch_options_t *clawpatch_opt = fclaw_clawpatch_get_options(glob);
+    int mbc = clawpatch_opt->mbc;
+
+    // const fclaw_options_t* fclaw_opt = fclaw_get_options(glob);
+    //fclaw_clawpatch_vtable_t* clawpatch_vt = fclaw_clawpatch_vt(glob);
+
+
+    int maux;
+    double *auxcoarse, *auxfine;
+    fclaw_clawpatch_aux_data(glob,coarse_patch,&auxcoarse,&maux);    
+    fclaw_clawpatch_aux_data(glob,fine_patch,   &auxfine,&maux);    
+
+    int mx = clawpatch_opt->mx;
+    int my = clawpatch_opt->my;
+
+    fc2d_clawpack46_options_t *clawpack46_opt = 
+                   fc2d_clawpack46_get_options(glob);
+    int mcapa = clawpack46_opt->mcapa;
+
+    /* These will be empty for non-manifolds cases */
+    SPHERE_FORT_AVERAGE_FACE(&mx,&my,&mbc,&meqn,&mcapa, &s_mbathy, 
+                             qcoarse,qfine,auxcoarse,auxfine, &maux, 
+                             &idir,&iface_coarse, &igrid,
+                             &transform_data);
+}
+
+
+static
+void sphere_average_corner(fclaw_global_t *glob,
+                              fclaw_patch_t *coarse_patch,
+                              fclaw_patch_t *fine_patch,
+                              int coarse_blockno,
+                              int fine_blockno,
+                              int coarse_corner,
+                              int time_interp,
+                              fclaw_patch_transform_data_t* transform_data)
+{
+    int meqn;
+    double *qcoarse;
+    fclaw_clawpatch_timesync_data(glob,coarse_patch,time_interp,&qcoarse,&meqn);
+
+    double *qfine = fclaw_clawpatch_get_q(glob,fine_patch);
+
+    int maux;
+    double *auxcoarse, *auxfine;
+    fclaw_clawpatch_aux_data(glob,coarse_patch,&auxcoarse,&maux);    
+    fclaw_clawpatch_aux_data(glob,fine_patch,   &auxfine,&maux);    
+
+    const fclaw_clawpatch_options_t *clawpatch_opt = fclaw_clawpatch_get_options(glob);
+    int mbc = clawpatch_opt->mbc;
+
+    // this is experimental
+    int* block_corner_count = fclaw_patch_block_corner_count(glob,coarse_patch);
+    if (block_corner_count[coarse_corner] == 3)
+        return;
+
+    fc2d_clawpack46_options_t *clawpack46_opt = 
+                   fc2d_clawpack46_get_options(glob);
+    int mcapa = clawpack46_opt->mcapa;
+
+    // const fclaw_options_t *fclaw_opt = fclaw_get_options(glob);
+    // if (fill_ghost(glob,time_interp))
+    {
+        //fclaw_clawpatch_vtable_t* clawpatch_vt = fclaw_clawpatch_vt(glob);
+
+        int mx = clawpatch_opt->mx;
+        int my = clawpatch_opt->my;
+
+        /* These will be empty for non-manifolds cases */
+        SPHERE_FORT_AVERAGE_CORNER(&mx,&my,&mbc,&meqn,&mcapa,&s_mbathy,
+                                   qcoarse,qfine,
+                                   auxcoarse,auxfine,&maux,
+                                   &coarse_corner,&transform_data);
+    }
+}
+
+static
+void sphere_average2coarse(fclaw_global_t *glob,
+                           fclaw_patch_t *fine_patches,
+                           fclaw_patch_t *coarse_patch,
+                           int blockno, int fine0_patchno,
+                           int coarse_patchno)
+
+{
+    const fclaw_clawpatch_options_t *clawpatch_opt = 
+                    fclaw_clawpatch_get_options(glob);    
+    int mbc = clawpatch_opt->mbc;
+    int meqn = clawpatch_opt->meqn;
+
+
+    for(int igrid = 0; igrid < fclaw_domain_num_siblings(glob->domain); igrid++)
+    {
+        fclaw_patch_t *fine_patch = &fine_patches[igrid];
+        double *qfine = fclaw_clawpatch_get_q(glob,fine_patch);
+        double *qcoarse = fclaw_clawpatch_get_q(glob,coarse_patch);
+
+        // const fclaw_options_t* fclaw_opt = fclaw_get_options(glob);
+
+        // fclaw_clawpatch_vtable_t* clawpatch_vt = fclaw_clawpatch_vt(glob);
+
+        int maux;
+        double *auxcoarse, *auxfine;
+        fclaw_clawpatch_aux_data(glob,coarse_patch,&auxcoarse,&maux);    
+        fclaw_clawpatch_aux_data(glob,fine_patch,   &auxfine,&maux);    
+
+        fc2d_clawpack46_options_t *clawpack46_opt = 
+               fc2d_clawpack46_get_options(glob);
+        int mcapa = clawpack46_opt->mcapa;
+
+
+        int mx = clawpatch_opt->mx;
+        int my = clawpatch_opt->my;
+        SPHERE_FORT_AVERAGE2COARSE(&mx,&my,&mbc,&meqn,&mcapa, &s_mbathy, 
+                                   qcoarse,qfine, auxcoarse, auxfine, 
+                                   &maux, &igrid);
+    }
+}
+
+
+/* ----------------------------------- INTERPOLATE ------------------------------------ */
+
+static
+void sphere_interpolate_face(fclaw_global_t *glob,
+                             fclaw_patch_t *coarse_patch,
+                             fclaw_patch_t *fine_patch,
+                             int idir,
+                             int iface_coarse,
+                             int p4est_refineFactor,
+                             int refratio,
+                             int time_interp,
+                             int igrid,
+                             fclaw_patch_transform_data_t* transform_data)
+{
+
+    const fclaw_clawpatch_options_t *clawpatch_opt = fclaw_clawpatch_get_options(glob);
+
+    int meqn;
+    double *qcoarse;
+    fclaw_clawpatch_timesync_data(glob,coarse_patch,time_interp,&qcoarse,&meqn);
+    double *qfine = fclaw_clawpatch_get_q(glob,fine_patch);
+
+    int mbc = clawpatch_opt->mbc;
+
+    // Interpolation stencils will use corner data;  this allows us to 
+    // set corner data at three-patch corners appropriately. 
+    int* block_corner_count = fclaw_patch_block_corner_count(glob,coarse_patch);
+    FCLAW2D_CLAWPATCH_SET_CORNER_COUNT(block_corner_count);
+
+    int maux;
+    double *auxcoarse, *auxfine;
+    fclaw_clawpatch_aux_data(glob,coarse_patch,&auxcoarse,&maux);    
+    fclaw_clawpatch_aux_data(glob,fine_patch,   &auxfine,&maux);    
+
+    // if (fill_ghost(glob,time_interp))
+    {
+        //fclaw_clawpatch_vtable_t* clawpatch_vt = fclaw_clawpatch_vt(glob);
+
+        int mx = clawpatch_opt->mx;
+        int my = clawpatch_opt->my;
+        SPHERE_FORT_INTERPOLATE_FACE(&mx,&my,&mbc,&meqn,
+                                     qcoarse,qfine, auxcoarse, auxfine,
+                                     &maux,&s_mbathy,&idir,
+                                     &iface_coarse,&igrid,&transform_data);
+    }
+}
+
+static
+void sphere_interpolate_corner(fclaw_global_t* glob,
+                                  fclaw_patch_t* coarse_patch,
+                                  fclaw_patch_t* fine_patch,
+                                  int coarse_blockno,
+                                  int fine_blockno,
+                                  int coarse_corner,
+                                  int time_interp,
+                                  fclaw_patch_transform_data_t* transform_data)
+
+{
+    const fclaw_clawpatch_options_t *clawpatch_opt = fclaw_clawpatch_get_options(glob);
+    int mbc = clawpatch_opt->mbc;
+
+    int meqn;
+    double *qcoarse;
+    fclaw_clawpatch_timesync_data(glob,coarse_patch,time_interp,&qcoarse,&meqn);
+
+    double *qfine = fclaw_clawpatch_get_q(glob,fine_patch);
+
+    // this is experimental
+#if 0
+    int* block_corner_count = fclaw_patch_block_corner_count(glob,coarse_patch);
+    if (block_corner_count[coarse_corner] == 3)
+        return;
+#endif        
+
+
+    int maux;
+    double *auxcoarse, *auxfine;
+    fclaw_clawpatch_aux_data(glob,coarse_patch,&auxcoarse,&maux);    
+    fclaw_clawpatch_aux_data(glob,fine_patch,   &auxfine,&maux);    
+
+    //if (fill_ghost(glob,time_interp))
+    {
+        //fclaw_clawpatch_vtable_t* clawpatch_vt = fclaw_clawpatch_vt(glob);
+        int mx = clawpatch_opt->mx;
+        int my = clawpatch_opt->my;
+        SPHERE_FORT_INTERPOLATE_CORNER(&mx,&my,&mbc,&meqn,
+                                       qcoarse,qfine,auxcoarse,auxfine,
+                                       &maux,&s_mbathy,
+                                       &coarse_corner,&transform_data);    
+    }
+
+}
 
 void sphere_link_solvers(fclaw_global_t *glob)
 {
@@ -220,6 +452,8 @@ void sphere_link_solvers(fclaw_global_t *glob)
 
     fclaw_patch_vtable_t *patch_vt = fclaw_patch_vt(glob);
     patch_vt->setup   = &sphere_patch_setup_manifold;
+
+
 
     const user_options_t* user_opt = sphere_get_options(glob);
     if (user_opt->mapping == 3)
@@ -252,8 +486,20 @@ void sphere_link_solvers(fclaw_global_t *glob)
             clawpack46_vt->fort_rpn2 = &CLAWPACK46_RPN2;
             clawpack46_vt->fort_rpt2 = &CLAWPACK46_RPT2;            
         }
-
         clawpack46_vt->fort_rpn2_cons = &RPN2CONS_UPDATE_MANIFOLD;
+
+        /* These are all 4.6 layout versions.  */
+        patch_vt->average_face    = sphere_average_face;
+        patch_vt->average_corner  = sphere_average_corner;
+        patch_vt->average2coarse  = sphere_average2coarse;
+
+
+        patch_vt->interpolate_face   = sphere_interpolate_face;
+        patch_vt->interpolate_corner = sphere_interpolate_corner;
+#if 0        
+        clawpatch_vt->d2->fort_interpolate2fine   = SPHERE_FORT_INTERPOLATE2FINE;
+#endif        
+
     }
     else
     {

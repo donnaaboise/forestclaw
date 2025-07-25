@@ -45,6 +45,10 @@ double precision function bmount(blockno,xc,yc)
         theta = acos(d) !! in [0,pi]
         qb = exp(-alpha*(theta-theta_ridge)**2)
         bmount = -bathy(1) + bathy(2)*qb
+        if (bmount .gt. 0) then
+            write(6,*) 'bmount : Dry land!'
+            stop
+        endif
     endif
 
     return

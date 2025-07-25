@@ -19,7 +19,29 @@ integer function user_exceeds_threshold(blockno,meqn,&
     integer :: mq
     double precision :: pi
 
+
     refine = 0
+
+!!    if (blockno .eq. 4) then
+!!        refine = 1
+!!    endif
+
+    block
+        integer*8 cont, fclaw_map_get_context
+        double precision xp,yp,zp
+
+        cont = fclaw_map_get_context()
+
+        call fclaw_map_2d_c2m(cont,blockno,xc,yc,xp,yp,zp)
+
+        if (xp .ge. 0.1) then
+            refine = 1
+        endif
+    end block
+
+    user_exceeds_threshold = refine
+
+    return
 
     pi = 4.d0*atan(1.d0)
 

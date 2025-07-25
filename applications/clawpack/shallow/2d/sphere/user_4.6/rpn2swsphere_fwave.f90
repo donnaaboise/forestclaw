@@ -137,6 +137,16 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
 
         CALL  simple_riemann(hR,huR,hvR, bR, hL,huL,hvL,bL, sw,fw)
 
+!!        block
+!!            if (ixy .eq. 1) then
+!!                write(6,*) ixy,i,jcom,sw(1), sw(2), sw(3)
+!!            else                
+!!                write(6,*) ixy,icom,i,sw(1), sw(2), sw(3)
+!!            endif
+!!        end block
+
+
+
         sdk = gamma/dy
         DO mw = 1,mwaves
             s(i,mw) = sdk*sw(mw)
@@ -145,7 +155,9 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
             fwave(i,3,mw) = sdk*(fw(2,mw)*eny + fw(3,mw)*ety)
             fwave(i,4,mw) = sdk*(fw(2,mw)*enz + fw(3,mw)*etz)
         ENDDO
-    end do
+
+    end do   !! End "i" loop
+
 
     !! # no entropy fix
     !! ----------------
@@ -171,8 +183,6 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
     !! Continue to section where we project out any momentum in 
     !! the normal direction
     goto 900
-
-
 
 
 !!-----------------------------------------------------
@@ -343,7 +353,6 @@ SUBROUTINE simple_riemann(hR,huR,hvR, br, hL,huL,hvl,bL, s,fwave)
 
     hbar = 0.5 * (hr + hl)
 
-
     !!hsq = SQRT(hR) + SQRT(hL)
     !!uhat = (hul/sqrt(hl) + huR/sqrt(hr))/hsq
     !!vhat = (hvl/sqrt(hl) + hvl/sqrt(hl))/hsq 
@@ -370,6 +379,7 @@ SUBROUTINE simple_riemann(hR,huR,hvR, br, hL,huL,hvl,bL, s,fwave)
     fluxdiff(2) = fr(2) - fl(2)  + (psir - psil)
     fluxdiff(3) = fr(3) - fl(3)
 
+
     !! # Wave speeds
     s(1) = MIN(ul - SQRT(grav * hl), uhat - chat)
     s(3) = MAX(ur + SQRT(grav * hr), uhat + chat)!!    
@@ -378,7 +388,10 @@ SUBROUTINE simple_riemann(hR,huR,hvR, br, hL,huL,hvl,bL, s,fwave)
 
     beta(1) =  (s(3)*fluxdiff(1) - fluxdiff(2)) / (s(3) - s(1))
     beta(3) = (-s(1)*fluxdiff(1) + fluxdiff(2)) / (s(3) - s(1))
-    beta(2) =  - vhat*fluxdiff(1) + fluxdiff(3) 
+    beta(2) =  -vhat*fluxdiff(1) + fluxdiff(3) 
+
+!!    write(6,100) beta(1), beta(2), beta(3)
+!!100 format(3E16.4)    
 
     !! # Flux waves = beta*R
     fwave(1,1) = beta(1)

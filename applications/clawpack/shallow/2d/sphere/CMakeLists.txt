@@ -15,6 +15,8 @@ add_library(sphere_swe_f OBJECT
 	user_4.6/rpt2swq.f90
 	user_4.6/rpt2swq_fwave.f90
 	user_4.6/sphere_output_ascii_fort.f
+	user_4.6/sphere_average.f90
+	user_4.6/sphere_interpolate.f90
 	user_5.0/sphere_src2.f90
 	user_5.0/sphere_qinit.f90
 	user_5.0/sphere_setaux.f90

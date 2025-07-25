@@ -104,7 +104,7 @@ void SPHERE_SETAUX(const int* mx, const int* my,const int* mbc,
                    double surnormals[],double edgelengths[],
                    double curvature[],
                    double aux[],int* maux,
-                   int block_corner_count[]);
+                   const int* mbathy);
 
 
 #define SPHERE5_SETAUX FCLAW_F77_FUNC(sphere5_setaux,SPHERE5_SETAUX)
@@ -221,7 +221,95 @@ fclaw_map_context_t *
 fclaw_map_context_t * fclaw2d_map_new_cubedsphere (const double scale[],
                                                      const double shift[],
                                                      const double rotate[]);
+
 #endif                                                     
+
+
+
+#define SPHERE_FORT_AVERAGE_FACE \
+             FCLAW_F77_FUNC(sphere_fort_average_face, \
+                            SPHERE_FORT_AVERAGE_FACE)
+
+void SPHERE_FORT_AVERAGE_FACE(const int* mx, const int* my, const int* mbc,
+                              const int* meqn, const int* mcapa, const int* mbathy,
+                              double qcoarse[], double qfine[],
+                              double auxcoarse[], double auxfine[],
+                              const int *maux, const int* idir, 
+                              const int* iside, const int* igrid,
+                              struct fclaw_patch_transform_data** 
+                              transform_cptr);
+  
+/** Fortran subroutine name */
+#define SPHERE_FORT_AVERAGE_CORNER \
+      FCLAW_F77_FUNC(sphere_fort_average_corner, \
+                     SPHERE_FORT_AVERAGE_CORNER)
+
+void SPHERE_FORT_AVERAGE_CORNER(const int* mx, const int* my, const int* mbc,
+                                const int* meqn, const int *mcapa, const int* mbathy,
+                                double qcoarse[], double qfine[],
+                                double auxcoarse[], double auxfine[],
+                                const int *maux, const int* a_corner, 
+                                struct fclaw_patch_transform_data** 
+                                transform_cptr);
+  
+
+/** Fortran subroutine name */
+#define SPHERE_FORT_AVERAGE2COARSE \
+      FCLAW_F77_FUNC(sphere_fort_average2coarse, \
+                     SPHERE_FORT_AVERAGE2COARSE)
+
+void SPHERE_FORT_AVERAGE2COARSE(const int* mx, const int* my, 
+                                const int* mbc, const int* meqn,
+                                const int* mcapa,const int* mbathy,
+                                double qcoarse[],double qfine[],
+                                double auxcoarse[],double auxfine[],
+                                const int *maux, const int* igrid);
+
+
+/** Fortran subroutine name */
+#define SPHERE_FORT_INTERPOLATE_FACE \
+              FCLAW_F77_FUNC(sphere_fort_interpolate_face, \
+                             SPHERE_FORT_INTERPOLATE_FACE)
+void SPHERE_FORT_INTERPOLATE_FACE(const int* mx, const int* my, 
+                                  const int* mbc,const int* meqn,
+                                  double qcoarse[],double qfine[],
+                                  double auxcoarse[],double auxfine[],
+                                  const int* maux,const int* mbathy,
+                                  const int* idir, const int* iside,
+                                  const int* igrid,
+                                  struct fclaw_patch_transform_data** 
+                                  transform_cptr);
+
+
+/** Fortran subroutine name */
+#define SPHERE_FORT_INTERPOLATE_CORNER \
+      FCLAW_F77_FUNC(sphere_fort_interpolate_corner, \
+                     SPHERE_FORT_INTERPOLATE_CORNER)
+
+
+void SPHERE_FORT_INTERPOLATE_CORNER(const int* mx, const int* my, 
+                                    const int* mbc,const int* meqn, 
+                                    double qcoarse[],double qfine[], 
+                                    double auxcoarse[], double auxfine[],
+                                    const int* maux, const int* mbathy,
+                                    const int* coarse_corner,
+                                    struct fclaw_patch_transform_data** 
+                                    transform_cptr);
+
+
+/** Fortran subroutine name */
+#define SPHERE_FORT_INTERPOLATE2FINE \
+           FCLAW_F77_FUNC(sphere_fort_interpolate2fine, \
+                          SPHERE_FORT_INTERPOLATE2FINE)
+
+void SPHERE_FORT_INTERPOLATE2FINE(const int* mx,const int* my,
+                                  const int* mbc, const int* meqn,
+                                  double qcoarse[], double qfine[],
+                                  double areacoarse[], double areafine[],
+                                  const int* igrid, const int* manifold);
+  
+/** @} */
+
 
 #ifdef __cplusplus
 }

@@ -2,8 +2,8 @@ setviews;
 
 parms = read_vars();
 
-fprintf('%10s : %12.4e\n','qmin',qmin);
-fprintf('%10s : %12.4e\n','qmax',qmax);
+fprintf('%10s : %20.16e\n','qmin',qmin);
+fprintf('%10s : %20.16e\n','qmax',qmax);
 
 if (PlotType  == 4)
     if (parms.example == 0)
@@ -67,8 +67,23 @@ if (PlotType  == 4)
     
 else
 
+    % Usual 3d plot
     colorbar;
-    
+    clim([-1,1]*5e-7);
+
+    % % Plot location of ridge
+    if parms.bathy(2) > 0
+        hold on;
+        tr = parms.theta_ridge;
+        th = linspace(0,2*pi,200);
+        X = sin(tr).*cos(th);
+        Y = sin(tr).*sin(th);
+        Z = cos(tr).*ones(size(th));
+        R = rotate_map(parms.phi,parms.theta);
+        XYZ = R'*[X; Y; Z];
+        plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:),'r','linewidth',2);
+        hold off;
+    end
 %     lv = linspace(c1,c2,11);
     showpatchborders(1:10);
     setpatchborderprops('linewidth',1)
@@ -80,6 +95,9 @@ else
 %     view(vright)
     set(gca,'clipping','off')
 end
+
+% view([46.6,5.55]);
+view(vfront)
 
 NoQuery = 0;
 prt = false;
