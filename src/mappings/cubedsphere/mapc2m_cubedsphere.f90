@@ -131,7 +131,7 @@ subroutine csphere_handle_ghost(blockno,xc,yc,xc1,yc1,blockno1)
    double precision xc,yc,xc1,yc1
    integer blockno, blockno1
 
-   logical x_in, y_in, interior, corner
+   logical x_in, y_in, interior, block_corner
 
    integer blocks(0:5,0:3,0:1), e0, e1
 
@@ -203,9 +203,10 @@ subroutine csphere_handle_ghost(blockno,xc,yc,xc1,yc1,blockno1)
 
    interior = x_in .and. y_in
 
-   corner = (.not. x_in) .and. (.not. y_in)
+   block_corner = (.not. x_in) .and. (.not. y_in)
 
-   if ((.not. interior) .and. (.not. corner)) then
+   !! We need to include hanging corners
+   if ((.not. interior) .and. (.not. block_corner)) then
         
       if (xc .lt. 0) then
          e0 = 0
