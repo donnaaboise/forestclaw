@@ -41,6 +41,9 @@ void latlong_problem_setup(fclaw_global_t *glob)
         fprintf(f,  "%-24.6f %s",user->latitude[0],"\% latitude[0]\n");
         fprintf(f,  "%-24.6f %s",user->latitude[1],"\% latitude[1]\n");
         fprintf(f,  "%-24.6f %s",user->maxelev,"\% max_elevation\n");
+        fprintf(f,  "%-24.6f %s",fclaw_opt->scale[0],"\% scale[0]\n");
+        fprintf(f,  "%-24.6f %s",fclaw_opt->scale[1],"\% scale[1]\n");
+        fprintf(f,  "%-24.6f %s",fclaw_opt->scale[2],"\% scale[2]\n");
         fclose(f);
     }
     fclaw_domain_barrier (glob->domain);

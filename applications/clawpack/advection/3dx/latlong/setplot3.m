@@ -46,7 +46,7 @@ ContourValues = [];   % draw contour lines from 'afterframe.m'
 % for multiblock domains ...
 xSliceCoords = [];
 ySliceCoords = [];
-zSliceCoords = [0.5];   % [0.2 0.4 0.6 0.8];
+zSliceCoords = [0 0.5 1];   % [0.2 0.4 0.6 0.8];
 
 IsosurfValues    =  [];        % Plot surfaces at q = surfValue(i).
 

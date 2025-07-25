@@ -8,5 +8,6 @@ parms.revs_per_second = data(3);
 parms.longitude = data(4:5);
 parms.latitude = data(6:7);
 parms.maxelev = data(8);
+parms.scale = data(9:11);
 
 end

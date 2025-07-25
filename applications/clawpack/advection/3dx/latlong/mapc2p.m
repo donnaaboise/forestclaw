@@ -22,7 +22,7 @@ switch map
         theta(m) = theta(m) + 2*pi;
 
         % Assume zc in [0,1]
-        R = parms.maxelev*zc + 1;    
+        R = parms.maxelev*zc + parms.scale(1);    
         xp = R.*cos(phi).*cos(theta);
         yp = R.*cos(phi).*sin(theta);
         zp = R.*sin(phi);
