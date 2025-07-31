@@ -118,6 +118,9 @@ latlong_destroy (user_options_t *user)
     fclaw_options_destroy_array (user->latitude);
     fclaw_options_destroy_array (user->longitude);
     fclaw_options_destroy_array (user->center);
+
+    FCLAW_ASSERT (user->kv_ring_units != NULL);
+    sc_keyvalue_destroy (user->kv_ring_units);
 }
 
 
