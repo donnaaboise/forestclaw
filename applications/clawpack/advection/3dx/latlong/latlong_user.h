@@ -40,7 +40,7 @@ extern "C"
 typedef struct user_options
 {
     int example;
-    int claw_version;
+    int initial_condition;
 
     double revs_per_second;
     double maxelev;
@@ -50,6 +50,18 @@ typedef struct user_options
 
     const char *longitude_string;
     double *longitude;
+
+    /* For Ring */
+    double ring_inner;
+    double ring_outer;
+
+    int ring_units; /**< ring units : degrees, radians, meters */
+    sc_keyvalue_t *kv_ring_units; /**< The refinement criteria */
+
+    const char* center_string;
+    double *center;
+
+    int claw_version;
 
     int is_registered;
 }

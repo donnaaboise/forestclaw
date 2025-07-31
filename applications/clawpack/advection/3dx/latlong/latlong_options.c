@@ -25,12 +25,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "latlong_user.h"
 
+#define LATLONG_UNITS_RADIANS 0
+#define LATLONG_UNITS_DEGREES 1
+#define LATLONG_UNITS_METERS 2
+
+
+static sc_keyvalue_t *
+kv_ring_units_new()
+{
+    sc_keyvalue_t *kv = sc_keyvalue_new ();
+    sc_keyvalue_set_int (kv, "radians", LATLONG_UNITS_RADIANS);
+    sc_keyvalue_set_int (kv, "degrees", LATLONG_UNITS_DEGREES);
+    sc_keyvalue_set_int (kv, "meters",  LATLONG_UNITS_METERS);
+
+    return kv;
+}
+
 static void *
 latlong_register (user_options_t *user, sc_options_t * opt)
 {
 
-    sc_options_add_int (opt, 0, "example", &user->example, 1,
-                        "[user] Example choice [1]");
+    sc_options_add_int (opt, 0, "example", &user->example, 0,
+                        "[user] Example choice [0]");
+
+    sc_options_add_int (opt, 0, "initial-condition", 
+                        &user->initial_condition, 0,
+                        "[user] Initial condition [0]");
 
     fclaw_options_add_double_array(opt, 0, "latitude", &user->latitude_string,
                                    "-50 50", &user->latitude, 2,
@@ -40,11 +60,29 @@ latlong_register (user_options_t *user, sc_options_t * opt)
                                    "0 360", &user->longitude, 2,
                                    "[user] Longitude range (degrees) [0 360]");
 
-    sc_options_add_double (opt, 0, "revs-per-second", &user->revs_per_second, 2,
-                        "[user] Revolutions per second [2]");
+    sc_options_add_double (opt, 0, "revs-per-second", &user->revs_per_second, 0.5,
+                        "[user] Revolutions per second [0.5]");
 
     sc_options_add_double (opt, 0, "max-elevation", &user->maxelev, 0.5,
                         "[user] Max elevation in extruded direction [0.5]");
+
+    sc_options_add_double (opt, 0, "ring-inner", &user->ring_inner, 
+                           10, "[user] Inner ring angle (example 2) [10 deg]");
+
+    sc_options_add_double (opt, 0, "ring-outer", &user->ring_outer, 
+                           40, "[user] Outer ring angle (example 2) [40 deg]");
+
+    /* Center of ring */
+    fclaw_options_add_double_array(opt, 0, "center", &user->center_string,
+                                   "0 0", &user->center, 2,
+                                   "[user] Center of ring [0 0]");
+
+    /* Set verbosity level for reporting timing */
+    sc_keyvalue_t *kv = user->kv_ring_units = kv_ring_units_new();
+    sc_options_add_keyvalue (opt, 0, "ring-units", 
+                             &user->ring_units, "degrees",
+                             kv, "Ring units (degrees, radians, length) [meters]");
+
 
     sc_options_add_int (opt, 0, "claw-version", &user->claw_version, 4,
                         "[user] Clawpack version (4 only) [4]");
@@ -61,13 +99,15 @@ latlong_postprocess (user_options_t *user)
                                         &user->latitude, 2);
     fclaw_options_convert_double_array (user->longitude_string,
                                         &user->longitude, 2);
+    fclaw_options_convert_double_array (user->center_string, &user->center,2);
+
     return FCLAW_NOEXIT;
 }
 
 static fclaw_exit_type_t
 latlong_check (user_options_t *user)
 {
-    FCLAW_ASSERT(user->example == 1);
+    FCLAW_ASSERT(user->example == 0);
     return FCLAW_NOEXIT;
 }
 
@@ -77,6 +117,7 @@ latlong_destroy (user_options_t *user)
 {
     fclaw_options_destroy_array (user->latitude);
     fclaw_options_destroy_array (user->longitude);
+    fclaw_options_destroy_array (user->center);
 }
 
 

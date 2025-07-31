@@ -49,14 +49,13 @@ subroutine clawpack46_rpn3(ixyz,maxm,meqn,mwaves,maux,mbc,mx,ql,qr, &
     double precision :: auxl(maux,1-mbc:maxm+mbc)
     double precision :: auxr(maux,1-mbc:maxm+mbc)
 
-    integer manifold
-    common /com_manifold/ manifold
+    integer mcapa
+    common /com_mcapa/ mcapa
 
-    integer :: i, iface, mcapa
+    integer :: i, iface
 
     ! Set wave, speed, and flux differences:
     iface = ixyz
-    mcapa = manifold
     do i = 2-mbc, mx+mbc
         wave(1,1,i) = ql(1,i) - qr(1,i-1)
         s(1,i) = auxl(iface+mcapa,i)

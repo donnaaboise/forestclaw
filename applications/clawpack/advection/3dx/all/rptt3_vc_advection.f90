@@ -74,14 +74,13 @@ subroutine clawpack46_rptt3(ixyz,icoor,imp,impt,maxm,meqn,mwaves,&
     dimension     aux2(maux,1-mbc:maxm+mbc,3)
     dimension     aux3(maux,1-mbc:maxm+mbc,3)
 
-    integer manifold
-    common /com_manifold/ manifold
+    integer mcapa
+    common /com_mcapa/ mcapa
 
-    integer :: i, i1, iuvw, mcapa
+    integer :: i, i1, iuvw
 
     ! set iuvw = 1 for u, 2 for v, 3 for w component of velocity
     ! depending on transverse direction:
-    mcapa = manifold
     iuvw = ixyz + icoor - 1
     
     if (iuvw.gt.3) iuvw = iuvw-3

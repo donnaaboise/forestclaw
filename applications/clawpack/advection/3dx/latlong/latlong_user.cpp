@@ -30,20 +30,35 @@ void latlong_problem_setup(fclaw_global_t *glob)
 {
     const user_options_t* user = latlong_get_options(glob);
     fclaw_options_t* fclaw_opt = fclaw_get_options(glob);
+    fc3d_clawpack46_options_t *clawopt = fc3d_clawpack46_get_options(glob);
+
     if (glob->mpirank == 0)
     {
         FILE *f = fopen("setprob.data","w");
         fprintf(f,  "%-24d   %s",user->example,"\% example\n");
-        fprintf(f,  "%-24d   %s",fclaw_opt->manifold,"\% manifold\n");
+        fprintf(f,  "%-24d   %s",clawopt->mcapa,"\% mcapa\n");
+        fprintf(f,  "%-24d   %s",user->initial_condition,"\% initial_condition\n");
         fprintf(f,  "%-24.6f %s",user->revs_per_second,"\% revs_per_second\n");
+
         fprintf(f,  "%-24.6f %s",user->longitude[0],"\% longitude[0]\n");
         fprintf(f,  "%-24.6f %s",user->longitude[1],"\% longitude[1]\n");
         fprintf(f,  "%-24.6f %s",user->latitude[0],"\% latitude[0]\n");
         fprintf(f,  "%-24.6f %s",user->latitude[1],"\% latitude[1]\n");
+
         fprintf(f,  "%-24.6f %s",user->maxelev,"\% max_elevation\n");
+
+        /* Needed only for Matlab;  not needed in setprob.f90 */
         fprintf(f,  "%-24.6f %s",fclaw_opt->scale[0],"\% scale[0]\n");
         fprintf(f,  "%-24.6f %s",fclaw_opt->scale[1],"\% scale[1]\n");
         fprintf(f,  "%-24.6f %s",fclaw_opt->scale[2],"\% scale[2]\n");
+
+        fprintf(f,  "%-24.16f   %s",user->center[0],"\% center[0]\n");
+        fprintf(f,  "%-24.16f   %s",user->center[1],"\% center[1]\n");
+
+        fprintf(f,  "%-24.16f   %s",user->ring_inner,"\% ring-inner\n");
+        fprintf(f,  "%-24.16f   %s",user->ring_outer,"\% ring-outer\n");
+        fprintf(f,  "%-24d   %s",user->ring_units,"\% ring_units\n");
+
         fclose(f);
     }
     fclaw_domain_barrier (glob->domain);
