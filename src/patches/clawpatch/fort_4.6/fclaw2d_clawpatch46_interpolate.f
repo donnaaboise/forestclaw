@@ -56,6 +56,8 @@ c     # This should be refratio*refratio.
       integer ii,jj,dc(2),df(2,0:rr2-1),iff,jff
       double precision shiftx(0:rr2-1),shifty(0:rr2-1)
 
+      integer sweep_dir
+
       mth = 5
       r2 = refratio*refratio
       if (r2 .ne. rr2) then
@@ -88,60 +90,70 @@ c           # Map (0,1) to (-1/4,1/4) (locations of fine grid points)
       enddo
 c     # Create map :
 
+
       do mq = 1,meqn
          if (idir .eq. 0) then
 c           # this ensures that we get 'hanging' corners
 
+            sweep_dir = 0
+!!            call fclaw2d_clawpatch_fix_corners(mx,my,mbc,meqn,qcoarse,
+!!     &            sweep_dir)
+
             do ibc = 1,mbc/2
-            if (iface_coarse .eq. 0) then
-               ic = ibc
-            elseif (iface_coarse .eq. 1) then
-               ic = mx - ibc + 1
-            else
-               write(6,*) 'interpolate : Problem with iface_coarse'
-               write(6,*) 'iface_coarse = ', iface_coarse
-               stop               
-            endif
-            do jc = 1,mx
-               i1 = ic
-               j1 = jc
-               call fclaw2d_clawpatch_transform_face_half(i1,j1,i2,j2,
-     &               transform_ptr)
-               skip_this_grid = .false.
-               do m = 0,r2-1
-                  if (.not. 
-     &        fclaw2d_clawpatch_is_valid_interp(i2(m),j2(m),mx,my,mbc))
+               if (iface_coarse .eq. 0) then
+                  ic = ibc
+               elseif (iface_coarse .eq. 1) then
+                  ic = mx - ibc + 1
+               else
+                  write(6,*) 'interpolate : Problem with iface_coarse'
+                  write(6,*) 'iface_coarse = ', iface_coarse
+                  stop               
+               endif
+               do jc = 1,mx
+                  i1 = ic
+                  j1 = jc
+                  call fclaw2d_clawpatch_transform_face_half(i1,j1,
+     &                       i2,j2, transform_ptr)
+                  skip_this_grid = .false.
+                  do m = 0,r2-1
+                     if (.not. 
+     &         fclaw2d_clawpatch_is_valid_interp(i2(m),j2(m),mx,my,mbc))
      &                  then
-                     skip_this_grid = .true.
-                     exit
+                        skip_this_grid = .true.
+                        return
+                     endif
+                  enddo
+                  if (.not. skip_this_grid) then
+                     qc = qcoarse(ic,jc,mq)
+c                    # Compute limited slopes in both x and y. Note we are not
+c                    # really computing slopes, but rather just differences.
+c                    # Scaling is accounted for in 'shiftx' and 'shifty', below.
+                     sl = (qc - qcoarse(ic-1,jc,mq))
+                     sr = (qcoarse(ic+1,jc,mq) - qc)
+                     gradx = fclaw2d_clawpatch_compute_slopes(sl,sr,mth)
+
+                     sl = (qc - qcoarse(ic,jc-1,mq))
+                     sr = (qcoarse(ic,jc+1,mq) - qc)
+                     grady = fclaw2d_clawpatch_compute_slopes(sl,sr,mth)
+
+                     do m = 0,rr2-1
+                        iff = i2(0) + df(1,m)
+                        jff = j2(0) + df(2,m)
+                        value = qc + gradx*shiftx(m) + grady*shifty(m)
+                        qfine(iff,jff,mq) = value
+                     enddo
                   endif
                enddo
-               if (.not. skip_this_grid) then
-                  qc = qcoarse(ic,jc,mq)
-c                 # Compute limited slopes in both x and y. Note we are not
-c                 # really computing slopes, but rather just differences.
-c                 # Scaling is accounted for in 'shiftx' and 'shifty', below.
-                  sl = (qc - qcoarse(ic-1,jc,mq))
-                  sr = (qcoarse(ic+1,jc,mq) - qc)
-                  gradx = fclaw2d_clawpatch_compute_slopes(sl,sr,mth)
-
-                  sl = (qc - qcoarse(ic,jc-1,mq))
-                  sr = (qcoarse(ic,jc+1,mq) - qc)
-                  grady = fclaw2d_clawpatch_compute_slopes(sl,sr,mth)
-
-                  do m = 0,rr2-1
-                     iff = i2(0) + df(1,m)
-                     jff = j2(0) + df(2,m)
-                     value = qc + gradx*shiftx(m) + grady*shifty(m)
-                     qfine(iff,jff,mq) = value
-                  enddo
-               endif
-            enddo
             enddo
          else
+            !! idir = 1
+            sweep_dir = 1
+            !!call fclaw2d_clawpatch_fix_corners(mx,my,mbc,meqn,qcoarse,
+!!     &            sweep_dir)
+
             do jbc = 1,mbc/2
             if (iface_coarse .eq. 2) then
-               jc = jbc
+                  jc = jbc
             elseif (iface_coarse .eq. 3) then
 c              // iface_coarse = 3
                jc = my - jbc + 1
@@ -169,7 +181,7 @@ c              # ---------------------------------------------
      &       fclaw2d_clawpatch_is_valid_interp(i2(m),j2(m),mx,my,mbc))
      &                  then
                      skip_this_grid = .true.
-                     exit
+                     return
                   endif
                enddo
                if (.not. skip_this_grid) then
@@ -392,8 +404,8 @@ c              # Fill in refined values on coarse grid cell (ic,jc)
       enddo
 
       if (manifold .ne. 0) then
-         call fclaw2d_clawpatch46_fort_fixcapaq2(mx,my,mbc,meqn,
-     &         qcoarse,qfine, areacoarse,areafine,igrid)
+!!         call fclaw2d_clawpatch46_fort_fixcapaq2(mx,my,mbc,meqn,
+!!     &         qcoarse,qfine, areacoarse,areafine,igrid)
       endif
 
 
@@ -483,4 +495,97 @@ c     # -------------------------------------------------------
 
       end
 
+
+      subroutine fclaw2d_clawpatch_set_corner_count(corner_count)
+      implicit none
+      integer corner_count(0:3)
+
+      integer block_corner_count(0:3)
+      common /com_interp/ block_corner_count
+
+      integer k
+
+      do k = 0,3
+         block_corner_count(k) = corner_count(k)
+      end do
+
+      end subroutine fclaw2d_clawpatch_set_corner_count
+
+
+c     #  See 'cubed_sphere_corners.ipynb'
+      subroutine fclaw2d_clawpatch_fix_corners(mx,my,mbc,meqn,q, 
+     &            sweep_dir)
+      implicit none
+
+      integer :: mx,my,mbc,meqn,sweep_dir
+      double precision :: q(1-mbc:mx+mbc,1-mbc:my+mbc,meqn)
+      !!double precision :: aux(1-mbc:mx+mbc,1-mbc:my+mbc,maux)
+
+      integer :: k,m,idata,jdata
+      double precision :: ihat(0:3),jhat(0:3)
+      integer :: i1, j1, ibc, jbc
+      logical :: use_b
+
+      integer block_corner_count(0:3)
+      common /com_interp/ block_corner_count
+
+c     # Lower left corner
+      ihat(0) = 0.5
+      jhat(0) = 0.5
+
+c     # Lower right corner
+      ihat(1) = mx+0.5
+      jhat(1) = 0.5
+
+c     # Upper left corner
+      ihat(2) = 0.5
+      jhat(2) = my+0.5
+
+c     # Upper right corner
+      ihat(3) = mx+0.5
+      jhat(3) = my+0.5
+
+      do k = 0,3
+         if (block_corner_count(k) .ne. 3) then
+            cycle
+         endif
+         use_b = sweep_dir .eq. 0 .and. (k .eq. 0 .or. k .eq. 3)
+     &        .or.  sweep_dir .eq. 1 .and. (k .eq. 1 .or. k .eq. 2)
+         do ibc = 1,mbc
+            do jbc = 1,mbc
+c              # Average fine grid corners onto coarse grid ghost corners
+               if (k .eq. 0) then
+                  i1 = 1-ibc
+                  j1 = 1-jbc
+               elseif (k .eq. 1) then
+                  i1 = mx+ibc
+                  j1 = 1-jbc
+               elseif (k .eq. 2) then
+                  i1 = 1-ibc
+                  j1 = my+jbc
+               elseif (k .eq. 3) then
+                  i1 = mx+ibc
+                  j1 = my+jbc
+               endif
+
+               if (use_b) then
+c                 # Transform involves B                
+                  idata =  j1 + int(ihat(k) - jhat(k))
+                  jdata = -i1 + int(ihat(k) + jhat(k))
+               else
+c                 # Transform involves B.transpose()             
+                  idata = -j1 + int(ihat(k) + jhat(k))
+                  jdata =  i1 - int(ihat(k) - jhat(k))
+               endif 
+               do m = 1,meqn
+                  q(i1,j1,m) = q(idata,jdata,m)
+               end do           
+!!               do m = 1,maux
+!!                  aux(i1,j1,m) = aux(idata,jdata,m)
+!!               end do           
+            end do              !! ibc
+         end do                 !! jbc
+      end do                    !! corner 'k' loop
+
+      end
 

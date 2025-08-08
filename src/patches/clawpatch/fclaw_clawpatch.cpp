@@ -697,6 +697,12 @@ void clawpatch_interpolate_face(fclaw_global_t *glob,
 
     int mbc = clawpatch_opt->mbc;
 
+    // Interpolation stencils will use corner data;  this allows us to 
+    // set corner data at three-patch corners appropriately. 
+    int* block_corner_count = fclaw_patch_block_corner_count(glob,coarse_patch);
+    FCLAW2D_CLAWPATCH_SET_CORNER_COUNT(block_corner_count);
+
+
     if (fill_ghost(glob,time_interp))
     {
         fclaw_clawpatch_vtable_t* clawpatch_vt = fclaw_clawpatch_vt(glob);
@@ -888,6 +894,11 @@ void clawpatch_average_corner(fclaw_global_t *glob,
     const fclaw_clawpatch_options_t *clawpatch_opt = fclaw_clawpatch_get_options(glob);
     int mbc = clawpatch_opt->mbc;
 
+    // this is experimental
+    int* block_corner_count = fclaw_patch_block_corner_count(glob,coarse_patch);
+    if (block_corner_count[coarse_corner] == 3)
+        return;
+
     const fclaw_options_t *fclaw_opt = fclaw_get_options(glob);
     int manifold = fclaw_opt->manifold;
     if (fill_ghost(glob,time_interp))
@@ -944,6 +955,14 @@ void clawpatch_interpolate_corner(fclaw_global_t* glob,
     fclaw_clawpatch_timesync_data(glob,coarse_patch,time_interp,&qcoarse,&meqn);
 
     double *qfine = fclaw_clawpatch_get_q(glob,fine_patch);
+
+    // this is experimental
+#if 1
+    int* block_corner_count = fclaw_patch_block_corner_count(glob,coarse_patch);
+    if (block_corner_count[coarse_corner] == 3)
+        return;
+#endif        
+
 
     if (fill_ghost(glob,time_interp))
     {

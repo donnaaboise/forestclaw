@@ -712,6 +712,13 @@ void AVERAGE2COARSE(const int* mx,const int* my,const int* mbc,
 
 /** @} */
 
+// Experimental : used for cubed sphere
+#define FCLAW2D_CLAWPATCH_SET_CORNER_COUNT \
+             FCLAW_F77_FUNC(fclaw2d_clawpatch_set_corner_count, \
+                            FCLAW2D_CLAWPATCH_SET_CORNER_COUNT)
+
+void FCLAW2D_CLAWPATCH_SET_CORNER_COUNT(int block_corner[]); 
+
 #ifdef __cplusplus
 }
 #endif
