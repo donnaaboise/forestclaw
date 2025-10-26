@@ -100,9 +100,6 @@ c                 # no capa array.  Standard flux differencing:
                   qold(i,j,m) = qold(i,j,m)
      &                  - dtdx * (fm(i+1,j,m) - fp(i,j,m))
      &                  - dtdy * (gm(i,j+1,m) - gp(i,j,m))   
-                  write(6,100) i,j,fm(i,j,m), fp(i,j,m), 
-     &                   gm(i,j,m), gp(i,j,m)
-100               format(2I5,4F16.8)                  
                else
 c                 # with capa array.
                   qold(i,j,m) = qold(i,j,m)
@@ -112,7 +109,5 @@ c                 # with capa array.
             enddo
          enddo
       enddo
-      write(6,*) 'Stopping in step2_wrap'
-      stop
 
       end
