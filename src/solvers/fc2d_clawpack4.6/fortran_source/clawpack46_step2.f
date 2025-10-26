@@ -48,6 +48,11 @@ c     ==========================================================
       integer :: m,i,j, ma, ixy
       integer :: sweep_dir
 
+      !! 1d arrays needed for third order corrections
+      double precision ::  q1d1(1-mbc:maxm+mbc, meqn)
+      double precision ::  q1d3(1-mbc:maxm+mbc, meqn)
+
+
       ierror = 0
 c     
 c     # store mesh parameters that may be needed in Riemann solver but not
@@ -112,7 +117,9 @@ c
 c        # copy data along a slice into 1d arrays:
          do m=1,meqn
             do i = 1-mbc, mx+mbc
-               q1d(i,m) = qold(i,j,m)
+               q1d1(i,m) = qold(i,j-1,m)
+               q1d(i,m) = qold(i,j,m)  !! "q1d2"
+               q1d3(i,m) = qold(i,j+1,m)
             enddo
          enddo
 
@@ -141,7 +148,7 @@ c
 c        # compute modifications fadd and gadd to fluxes along this slice:
          ixy = 1
          call flux2(1,maxm,meqn,maux,mbc,mx,
-     &        q1d,dtdx1d,aux1,aux2,aux3,
+     &        q1d1,q1d,q1d3,dtdx1d,aux1,aux2,aux3,
      &        faddm,faddp,gaddm,gaddp,cfl1d,
      &        work(i0wave),work(i0s),work(i0amdq),work(i0apdq),
      &        work(i0cqxx),work(i0bmadq),work(i0bpadq),rpn2,rpt2,
@@ -181,7 +188,9 @@ c
 c        # copy data along a slice into 1d arrays:
          do m=1,meqn
             do j = 1-mbc, my+mbc
+               q1d1(j,m) = qold(i-1,j,m)
                q1d(j,m) = qold(i,j,m)
+               q1d3(j,m) = qold(i+1,j,m)
             enddo
          enddo
 c     
@@ -210,7 +219,7 @@ c
 c     # compute modifications fadd and gadd to fluxes along this slice:
          ixy = 2
          call flux2(2,maxm,meqn,maux,mbc,my,
-     &        q1d,dtdy1d,aux1,aux2,aux3,
+     &        q1d1,q1d,q1d3,dtdy1d,aux1,aux2,aux3,
      &        faddm,faddp,gaddm,gaddp,cfl1d,
      &        work(i0wave),work(i0s),work(i0amdq),work(i0apdq),
      &        work(i0cqxx),work(i0bmadq),work(i0bpadq),rpn2,rpt2,
