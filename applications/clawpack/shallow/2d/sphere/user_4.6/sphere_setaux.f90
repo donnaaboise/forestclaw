@@ -1,96 +1,106 @@
 subroutine sphere_setaux(mx,my,mbc,xlower,ylower, & 
-   dx,dy,area,xnormals,ynormals, & 
-   xtangents,ytangents,surfnormals,curvature, & 
-   edgelengths,aux,maux,mbathy)
+    dx,dy,area,xnormals,ynormals, & 
+    xtangents,ytangents,surfnormals,curvature, & 
+    edgelengths,aux,maux,mbathy)
       
-   implicit none
+    implicit none
 
-   integer mbc, mx,my, maux,mbathy
-   double precision xlower, ylower, dx,dy
-   double precision aux(1-mbc:mx+mbc,1-mbc:my+mbc,maux)
+    integer mbc, mx,my, maux,mbathy
+    double precision xlower, ylower, dx,dy
+    double precision aux(1-mbc:mx+mbc,1-mbc:my+mbc,maux)
 
-   !! # Edge based quantities
-   double precision     xnormals(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
-   double precision     ynormals(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
-   double precision    xtangents(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
-   double precision    ytangents(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
-   double precision  edgelengths(-mbc:mx+mbc+2,-mbc:my+mbc+2,2)
+    !! # Edge based quantities
+    double precision     xnormals(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
+    double precision     ynormals(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
+    double precision    xtangents(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
+    double precision    ytangents(-mbc:mx+mbc+2,-mbc:my+mbc+2,3)
+    double precision  edgelengths(-mbc:mx+mbc+2,-mbc:my+mbc+2,2)
 
-   !! Cell centered quantities
-   double precision        area(-mbc:mx+mbc+1,-mbc:my+mbc+1)
-   double precision   curvature(-mbc:mx+mbc+2,-mbc:my+mbc+1)
-   double precision surfnormals(-mbc:mx+mbc+1,-mbc:my+mbc+1,3)
+    !! Cell centered quantities
+    double precision        area(-mbc:mx+mbc+1,-mbc:my+mbc+1)
+    double precision   curvature(-mbc:mx+mbc+2,-mbc:my+mbc+1)
+    double precision surfnormals(-mbc:mx+mbc+1,-mbc:my+mbc+1,3)
 
-   double precision bf1, bf2, bf3, bf4
-   integer level
+    !!double precision bf1, bf2, bf3, bf4
 
-   integer example
-   common /swe_example/ example
+    integer example
+    common /swe_example/ example
 
-   integer i,j,m
-   double precision dxdy, xc, yc
-   double precision bmount
+    integer i,j,m
+    double precision dxdy, xc, yc
+    double precision bmount
+    logical use_discrete_normal
 
-   integer blockno, fc2d_clawpack46_get_block
-   integer*8 cont, fclaw_map_get_context
+    integer blockno, fc2d_clawpack46_get_block
+    integer*8 cont, fclaw_map_get_context
 
-   cont = fclaw_map_get_context()
+    cont = fclaw_map_get_context()
+    blockno = fc2d_clawpack46_get_block()
 
-   blockno = fc2d_clawpack46_get_block()
+    use_discrete_normal = .true.
 
-   if (abs(dx - 1.0/(2*mx)) .lt.  1e-12) then
-      level = 1
-   else
-      level = 2
-   endif
+    dxdy = dx*dy
+    do i = 1-mbc,mx+mbc
+        do j = 1-mbc,my+mbc
+            xc = xlower + (i-0.5)*dx
+            yc = ylower + (j-0.5)*dy
 
-   write(6,*) level
+            !! (1) Capacity
+            aux(i,j,1) = area(i,j)/dxdy
+            do m = 1,3
 
-   dxdy = dx*dy
-   do i = 1-mbc,mx+mbc
-      do j = 1-mbc,my+mbc
-         xc = xlower + (i-0.5)*dx
-         yc = ylower + (j-0.5)*dy
+                !! (2-7) normals and tangents at left x-face
+                aux(i,j,1+m) = xnormals(i,j,m)
+                aux(i,j,4+m) = xtangents(i,j,m)
 
-         !! (1) Capacity
-         aux(i,j,1) = area(i,j)/dxdy
-         do m = 1,3
+                !! (8-13) normals and tangents at bottom y-face
+                aux(i,j,7+m) = ynormals(i,j,m)
+                aux(i,j,10+m) = ytangents(i,j,m)
 
-            !! (2-7) normals and tangents at left x-face
-            aux(i,j,1+m) = xnormals(i,j,m)
-            aux(i,j,4+m) = xtangents(i,j,m)
+                !! (14-16) surface normal at cell centers
+                if (use_discrete_normal) then
+                    !! This will conserve h
+                    aux(i,j,13+m) = surfnormals(i,j,m)
+                else
+                    !! Not conservative
+                    block
+                        double precision xp,yp,zp
+                        call fclaw_map_2d_c2m(cont,blockno,xc,yc,xp,yp,zp)
+                        aux(i,j,14) = xp
+                        aux(i,j,15) = yp
+                        aux(i,j,16) = zp
+                    end block
+                endif
 
-            !! (8-13) normals and tangents at bottom y-face
-            aux(i,j,7+m) = ynormals(i,j,m)
-            aux(i,j,10+m) = ytangents(i,j,m)
+            enddo
+            aux(i,j,17) = curvature(i,j)
 
-            !! (14-16) surface normal at cell centers
-            aux(i,j,13+m) = surfnormals(i,j,m)
+        end do
+    end do
 
-         enddo
-         aux(i,j,17) = curvature(i,j)
+    return
 
-      enddo
-   enddo
+    !! Set bathymetry
+    !! Ridge bathymetry
+    do i = 1-mbc,mx+mbc
+        do j = 1-mbc,my+mbc
+            xc = xlower + (i-0.5)*dx
+            yc = ylower + (j-0.5)*dy
 
-   !! Set bathymetry
-   !! Ridge bathymetry
-   do i = 1-mbc,mx+mbc
-      do j = 1-mbc,my+mbc
-         xc = xlower + (i-0.5)*dx
-         yc = ylower + (j-0.5)*dy
-
-         if (level .eq. 1) then
-
-            bf1 = bmount(blockno,xc-dx/2,yc-dy/2)
-            bf2 = bmount(blockno,xc-dx/2,yc+dy/2)
-            bf3 = bmount(blockno,xc+dx/2,yc-dy/2)
-            bf4 = bmount(blockno,xc+dx/2,yc+dy/2)
-
-            aux(i,j,mbathy) = (bf1 + bf2 + bf3 + bf4)/4
-         else
             aux(i,j,mbathy) = bmount(blockno,xc,yc)
-         endif
+
+!!         if (level .eq. 1) then
+!!
+!!            bf1 = bmount(blockno,xc-dx/2,yc-dy/2)
+!!            bf2 = bmount(blockno,xc-dx/2,yc+dy/2)
+!!            bf3 = bmount(blockno,xc+dx/2,yc-dy/2)
+!!            bf4 = bmount(blockno,xc+dx/2,yc+dy/2)
+!!
+!!            aux(i,j,mbathy) = (bf1 + bf2 + bf3 + bf4)/4
+!!         else
+!!            aux(i,j,mbathy) = bmount(blockno,xc,yc)
+!!         endif
+
       end do
    end do
 end

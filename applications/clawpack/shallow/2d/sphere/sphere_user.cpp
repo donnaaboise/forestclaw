@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fclaw_clawpatch.h>
 #include <fclaw_clawpatch_options.h>
 
+#include <fclaw2d_metric.h>
+
 #include <fclaw2d_clawpatch_fort.h>
 
 #include <fc2d_clawpack46.h> 
@@ -467,6 +469,14 @@ void sphere_link_solvers(fclaw_global_t *glob)
     clawpatch_vt->time_header_ascii = &sphere_header_ascii;
     clawpatch_vt->cb_output_ascii   = &cb_sphere_output_ascii;
 
+#if 0
+    /* This needs a C header */
+    fclaw2d_metric_vtable_t *metric_vt = fclaw2d_metric_vt(glob);
+    metric_vt->compute_area  = sphere_compute_area;
+#endif    
+
+
+
     if (user_opt->claw_version == 4)
     {
         fc2d_clawpack46_vtable_t  *clawpack46_vt = fc2d_clawpack46_vt(glob);
@@ -499,6 +509,8 @@ void sphere_link_solvers(fclaw_global_t *glob)
 #if 0        
         clawpatch_vt->d2->fort_interpolate2fine   = SPHERE_FORT_INTERPOLATE2FINE;
 #endif        
+        clawpatch_vt->d2->fort_conservation_check = SPHERE_FORT_CONSERVATION_CHECK;
+
 
     }
     else

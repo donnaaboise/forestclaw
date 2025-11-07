@@ -43,7 +43,7 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
     integer :: i, m, mw, mq, ioff
     double precision :: enx, eny, enz, etx,ety,etz
     double precision :: hunl, hunr
-    double precision :: gamma, amn, apn, df, dy
+    double precision :: gamma, df, dy
     double precision :: erx, ery, erz, h1, h3, hi, him1, hu1, hu3
     double precision :: s0, s03, s1, s3, sfract
 
@@ -55,6 +55,7 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
     double precision :: smax
 
     integer mbathy 
+    logical :: project_before, project_after
 
     data efix /.false./    !# use entropy fix for transonic rarefactions
 
@@ -91,6 +92,9 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
 
     !! # find a1 thru a3, the coefficients of the 3 eigenvectors:
 
+    project_before = .true.
+    project_after = .false.
+
     smax = 0
     mbathy = 18
     do i = 2-mbc, mx+mbc
@@ -108,17 +112,23 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
         ety =   ety / gamma
         etz =   etz / gamma
 
-        !! # projection to the sphere  (already done in src2)
-        !! erx = auxl(i,14)
-        !! ery = auxl(i,15)
-        !! erz = auxl(i,16)
-        !! qn = erx*ql(i,2) + ery*ql(i,3) + erz*ql(i,4)
-        !! ql(i,2) = ql(i,2) - qn*erx
-        !! ql(i,3) = ql(i,3) - qn*ery
-        !! ql(i,4) = ql(i,4) - qn*erz
-        !! qr(i,2) = ql(i,2)
-        !! qr(i,3) = ql(i,3)
-        !! qr(i,4) = ql(i,4)
+        block
+            !! # This will maintain conservation in h, at least on a 
+            !! # single patch (before a seam is hit). 
+            double precision qn
+            if (project_before) then
+                erx = auxl(i,14)
+                ery = auxl(i,15)
+                erz = auxl(i,16)
+                qn = erx*ql(i,2) + ery*ql(i,3) + erz*ql(i,4)
+                ql(i,2) = ql(i,2) - qn*erx
+                ql(i,3) = ql(i,3) - qn*ery
+                ql(i,4) = ql(i,4) - qn*erz
+                qr(i,2) = ql(i,2)
+                qr(i,3) = ql(i,3)
+                qr(i,4) = ql(i,4)
+            endif
+        end block
 
 
         !!  # compute normal and tangential momentum at cell edge:
@@ -296,30 +306,31 @@ SUBROUTINE clawpack46_rpn2_fwave(ixy,maxm,meqn,mwaves, &
 
 900 continue
 
-    !! if you don't want to project out momentum in direction
-    !! of surface normals, you can 
-    !!return
 
-    !! Project out momentum in direction normal to the surface
-    do i=2-mbc,mx+mbc
-        !! project momentum components onto tangent plane
-        erx = auxr(i-1,14)
-        ery = auxr(i-1,15)
-        erz = auxr(i-1,16)
-        amn = erx*amdq(i,2)+ery*amdq(i,3)+erz*amdq(i,4)
-        amdq(i,2) = amdq(i,2) - amn*erx
-        amdq(i,3) = amdq(i,3) - amn*ery
-        amdq(i,4) = amdq(i,4) - amn*erz
+    block
+        double precision amn, apn
+        if (project_after) then
+            !! Project out momentum in direction normal to the surface    
+            do i=2-mbc,mx+mbc
+                !! project momentum components onto tangent plane
+                erx = auxr(i-1,14)
+                ery = auxr(i-1,15)
+                erz = auxr(i-1,16)
+                amn = erx*amdq(i,2)+ery*amdq(i,3)+erz*amdq(i,4)
+                amdq(i,2) = amdq(i,2) - amn*erx
+                amdq(i,3) = amdq(i,3) - amn*ery
+                amdq(i,4) = amdq(i,4) - amn*erz
 
-        erx = auxl(i,14)
-        ery = auxl(i,15)
-        erz = auxl(i,16)
-        apn = erx*apdq(i,2)+ery*apdq(i,3)+erz*apdq(i,4)
-        apdq(i,2) = apdq(i,2) - apn*erx
-        apdq(i,3) = apdq(i,3) - apn*ery
-        apdq(i,4) = apdq(i,4) - apn*erz
-
-    END DO
+                erx = auxl(i,14)
+                ery = auxl(i,15)
+                erz = auxl(i,16)
+                apn = erx*apdq(i,2)+ery*apdq(i,3)+erz*apdq(i,4)
+                apdq(i,2) = apdq(i,2) - apn*erx
+                apdq(i,3) = apdq(i,3) - apn*ery
+                apdq(i,4) = apdq(i,4) - apn*erz                
+            END DO
+        endif
+    end block
 
     return
 END SUBROUTINE clawpack46_rpn2_fwave

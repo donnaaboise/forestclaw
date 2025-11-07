@@ -6,6 +6,7 @@ add_library(sphere_swe_f OBJECT
 	rpn2cons_update_manifold.f
 	bmount.f90 
 	sphere_exceeds_threshold.f90
+	user_4.6/sphere_fort_conservation.f90
 	user_4.6/sphere_src2.f90
 	user_4.6/sphere_qinit.f90
 	user_4.6/sphere_setaux.f90

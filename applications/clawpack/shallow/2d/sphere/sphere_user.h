@@ -310,6 +310,17 @@ void SPHERE_FORT_INTERPOLATE2FINE(const int* mx,const int* my,
   
 /** @} */
 
+/** Fortran subroutine name */
+#define SPHERE_FORT_CONSERVATION_CHECK \
+          FCLAW_F77_FUNC(sphere_fort_conservation_check, \
+                         SPHERE_FORT_CONSERVATION_CHECK)
+/** @copydoc fclaw2d_clawpatch46_fort_conservation_check() */
+void SPHERE_FORT_CONSERVATION_CHECK(int *mx, int *my, int* mbc, int* meqn,
+                                                 double *dx, double *dy,
+                                                 double* area, double *q, double* sum,
+                                                 double* c_kahan);
+
+
 
 #ifdef __cplusplus
 }

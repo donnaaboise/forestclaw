@@ -70,9 +70,10 @@ else
     % Usual 3d plot
     colorbar;
     clim([-1,1]*5e-7);
+    clim([qmin,qmax])
 
     % % Plot location of ridge
-    if parms.bathy(2) > 0
+    if 0 % parms.bathy(2) > 0
         hold on;
         tr = parms.theta_ridge;
         th = linspace(0,2*pi,200);
@@ -81,7 +82,7 @@ else
         Z = cos(tr).*ones(size(th));
         R = rotate_map(parms.phi,parms.theta);
         XYZ = R'*[X; Y; Z];
-        plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:),'r','linewidth',2);
+        % plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:),'r','linewidth',2);
         hold off;
     end
 %     lv = linspace(c1,c2,11);
@@ -96,8 +97,11 @@ else
     set(gca,'clipping','off')
 end
 
-% view([46.6,5.55]);
-view(vfront)
+view([46.6,5.55]);
+% view(vtop)
+view(3);
+s = 1e-6; clim([1-s, 1+s]);
+
 
 NoQuery = 0;
 prt = false;
