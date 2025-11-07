@@ -48,7 +48,6 @@ subroutine clawpack46_qinit(maxmx,maxmy,meqn,mbc,mx,my, &
     fname(7:7) = char(ichar('0') + blockno)
     !!write(6,*) fname
 
-
     !!open(10,file=fname)
     Rsphere = 1
 
@@ -107,9 +106,6 @@ subroutine clawpack46_qinit(maxmx,maxmy,meqn,mbc,mx,my, &
             endif 
         enddo
     enddo
-    !! write(6,*) 'stopping in qinit'
-    !! stop
-    !!close(10)
 
     return
 end  subroutine clawpack46_qinit

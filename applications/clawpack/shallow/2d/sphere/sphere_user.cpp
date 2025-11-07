@@ -446,6 +446,35 @@ void sphere_interpolate_corner(fclaw_global_t* glob,
 
 }
 
+
+static
+void sphere_cons_check(fclaw_global_t *glob,
+                       fclaw_patch_t *patch,
+                       int blockno,
+                       int patchno,
+                       void *user)
+{
+    error_info_t* error_data = (error_info_t*) user;
+    double* area = fclaw_clawpatch_get_2d_area(glob,patch);  /* Might be null */
+
+    int meqn;
+    double *q; 
+    fclaw_clawpatch_soln_data(glob,patch,&q,&meqn);
+
+    fclaw_clawpatch_vtable_t *clawpatch_vt = fclaw_clawpatch_vt(glob);
+
+    int mx, my, mbc;
+    double xlower,ylower,dx,dy;
+
+    FCLAW_ASSERT(clawpatch_vt->d2->fort_conservation_check != NULL);
+    fclaw_clawpatch_2d_grid_data(glob,patch,&mx,&my,&mbc,
+                                    &xlower,&ylower,&dx,&dy);
+    SPHERE_FORT_CONSERVATION_CHECK(&blockno,&mx, &my, &mbc, 
+                                   &meqn, &xlower, &ylower, &dx,&dy,
+                                   area, q, error_data->mass,
+                                   error_data->c_kahan);}
+
+
 void sphere_link_solvers(fclaw_global_t *glob)
 {
     /* ForestClaw core functions */
@@ -468,6 +497,8 @@ void sphere_link_solvers(fclaw_global_t *glob)
 
     clawpatch_vt->time_header_ascii = &sphere_header_ascii;
     clawpatch_vt->cb_output_ascii   = &cb_sphere_output_ascii;
+
+    clawpatch_vt->conservation_check = sphere_cons_check;
 
 #if 0
     /* This needs a C header */
@@ -509,8 +540,6 @@ void sphere_link_solvers(fclaw_global_t *glob)
 #if 0        
         clawpatch_vt->d2->fort_interpolate2fine   = SPHERE_FORT_INTERPOLATE2FINE;
 #endif        
-        clawpatch_vt->d2->fort_conservation_check = SPHERE_FORT_CONSERVATION_CHECK;
-
 
     }
     else
